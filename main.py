@@ -3,10 +3,12 @@ from fastapi.params import Body
 from pydantic import BaseModel
 from typing import Optional
 from random import randrange
+from fastapi import HTTPException
+
 
 app = FastAPI()
 
-
+#Validating Our Model
 class Post(BaseModel):
     title:str
     content:str
@@ -20,11 +22,13 @@ my_posts = [{"title":"title of post 1","content":"Content of Post 1","id":1},{
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+#Use to retrieve All Post present in Memory
 @app.get("/Dataposts")
 def get_posts():
     return {"data":my_posts}
 
-
+#Creating A post and saving it to memory by assigning Random id and Validating from Post Class
 @app.post("/posts")
 def create_post(post : Post):
     post_dict = post.dict()
@@ -32,6 +36,23 @@ def create_post(post : Post):
     my_posts.append(post_dict)
     return {"data":post_dict}
 
+#Find Post By id
+def findpost(id:int):
+    for post in my_posts:
+        if post["id"] == id:  # Access the "id" key in the dictionary
+            return {"post_details": post}
+
+    # Raise a 404 error if no post is found with the given id
+    raise HTTPException(status_code=404, detail=f"Post with id {id} not found")
+
+
+#Getting the singal post
+@app.get("/posts/{id}")# always use int when pasing id as fastapi treat number in url as str
+def get_post(id:int): 
+    post = findpost(id)
+
+    return {"postdetail":post}
+    
 
 
 
