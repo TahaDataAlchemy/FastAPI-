@@ -1,57 +1,43 @@
 from fastapi import FastAPI
 from fastapi.params import Body
 from pydantic import BaseModel
-from typing import Optional
 from fastapi import HTTPException,status,Depends
 import time
 from . import models
 from .models import Post as PostModelDB
+from typing import Optional,List
 from .ORM import engine,get_db
 from sqlalchemy.orm import Session
-
+from .schema import UpdatingPost,CreatePost,ApiResponsetoUser
 models.Base.metadata.create_all(bind = engine) # this line creates table which is refer to it right after runing the code if table is not there and it also use to communicate with tables
 
 app = FastAPI()
 
 
-#Validating Our Model
-class Post(BaseModel):
-    title:str
-    content:str
-    published:bool = True
-    rating: Optional[int] = None #its optional if not a value no problem None will return
-
-
-
-
-@app.get("/sqlalchemy")
-def test_post(db: Session = Depends(get_db)):
-    return {"status":"success"}
-
 #Use to retrieve All Post present in Memory
-@app.get("/DBposts",status_code=status.HTTP_200_OK)
+@app.get("/DBposts",status_code=status.HTTP_200_OK,response_model=List[ApiResponsetoUser])
 def get_Db_Post(db: Session = Depends(get_db)):
     posts = db.query(PostModelDB).all()
-    return {"data":posts}
+    return posts
 
-@app.post("/creatingPost",status_code=status.HTTP_201_CREATED)
-def PostCreated(post:Post,db:Session = Depends(get_db)):
+@app.post("/creatingPost",status_code=status.HTTP_201_CREATED,response_model=ApiResponsetoUser)
+def PostCreated(post:CreatePost,db:Session = Depends(get_db)):
     new_post = PostModelDB(**post.dict())
     db.add(new_post)
     db.commit()
     db.refresh(new_post) #Refresh to get generated Fields
-    return {"data":new_post}
+    return new_post
 
-@app.get("/DBposts/{id}",status_code=status.HTTP_200_OK)
+@app.get("/DBposts/{id}",status_code=status.HTTP_200_OK,response_model=ApiResponsetoUser)
 def getSinglePost(id: int,db:Session = Depends(get_db)):
     post = db.query(PostModelDB).filter(PostModelDB.id == id).first()
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with ID {id} is not Found"
         )
-    return {"data":post}
+    return post
 
-@app.delete("/DBposts/{id}",status_code=status.HTTP_200_OK)
+@app.delete("/DBposts/{id}",status_code=status.HTTP_200_OK,response_model=ApiResponsetoUser)
 def deletingSimplePostFromDB(id: int,db:Session = Depends(get_db)):
     deleted_post = db.query(PostModelDB).filter(PostModelDB.id == id).first()
     if not deleted_post:
@@ -64,8 +50,8 @@ def deletingSimplePostFromDB(id: int,db:Session = Depends(get_db)):
     return {
         "message":f"Post With {id} deleted SuccesFully"
     }
-@app.put("/UpdateDBposts/{id}", status_code=status.HTTP_200_OK)
-def update_post(id: int, post: Post,db:Session = Depends(get_db)):
+@app.put("/UpdateDBposts/{id}", status_code=status.HTTP_200_OK,response_model=ApiResponsetoUser)
+def update_post(id: int, post: UpdatingPost,db:Session = Depends(get_db)):
     # Check if the post exists in the database
     existing_post = db.query(PostModelDB).filter(PostModelDB.id == id).first()
     if not existing_post:
@@ -80,5 +66,5 @@ def update_post(id: int, post: Post,db:Session = Depends(get_db)):
     db.commit()
     db.refresh(existing_post)
 
-    return {"data": existing_post}
+    return existing_post
 
