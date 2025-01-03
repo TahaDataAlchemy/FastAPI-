@@ -1,6 +1,7 @@
 #Validating Our Model
-from pydantic import BaseModel
+from pydantic import BaseModel,EmailStr
 from typing import Optional
+from datetime import datetime
 
 class PostBase(BaseModel):
     title:str
@@ -20,3 +21,12 @@ class ApiResponsetoUser(BaseModel):
     content:str
     published:bool = True
     rating: Optional[int] = None
+
+class UserValidation(BaseModel):
+    email:EmailStr
+    password:str
+
+class CreatedUserResponse(BaseModel):
+    id: int
+    email:EmailStr
+    created_at: datetime
