@@ -34,3 +34,12 @@ class CreatedUserResponse(BaseModel):
 class LoginValidation(BaseModel):
     email: EmailStr
     password:str
+
+class TokenResponse(BaseModel):
+    acess_token :str
+    token_type : str
+
+class TokenData(BaseModel):
+    id: int
+    email:EmailStr
+    
