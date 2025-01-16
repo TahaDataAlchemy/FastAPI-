@@ -15,12 +15,13 @@ router = APIRouter(
 
 #Use to retrieve All Post present in Memory
 @router.get("/DBposts",status_code=status.HTTP_200_OK,response_model=List[ApiResponsetoUser])
-def get_Db_Post(db: Session = Depends(get_db),user_credentials:dict  = Depends(Oauth2.get_current_user)):
+def get_Db_Post(db: Session = Depends(get_db),user_data:dict  = Depends(Oauth2.get_current_user)):
     posts = db.query(PostModelDB).all()
     return posts
 
 @router.post("/creatingPost",status_code=status.HTTP_201_CREATED,response_model=ApiResponsetoUser)
-def PostCreated(post:CreatePost,db:Session = Depends(get_db),user_credentials:dict  = Depends(Oauth2.get_current_user)):
+def PostCreated(post:CreatePost,db:Session = Depends(get_db),user_data:dict  = Depends(Oauth2.get_current_user)):
+    print(user_data)
     new_post = PostModelDB(**post.dict())
     db.add(new_post)
     db.commit()
@@ -28,7 +29,7 @@ def PostCreated(post:CreatePost,db:Session = Depends(get_db),user_credentials:di
     return new_post
 
 @router.get("/DBposts/{id}",status_code=status.HTTP_200_OK,response_model=ApiResponsetoUser)
-def getSinglePost(id: int,db:Session = Depends(get_db),user_credentials:dict  = Depends(Oauth2.get_current_user)):
+def getSinglePost(id: int,db:Session = Depends(get_db),user_data:dict  = Depends(Oauth2.get_current_user)):
     post = db.query(PostModelDB).filter(PostModelDB.id == id).first()
     if not post:
         raise HTTPException(
@@ -37,7 +38,7 @@ def getSinglePost(id: int,db:Session = Depends(get_db),user_credentials:dict  = 
     return post
 
 @router.delete("/DBposts/{id}",status_code=status.HTTP_200_OK,response_model=ApiResponsetoUser)
-def deletingSimplePostFromDB(id: int,db:Session = Depends(get_db),user_credentials:dict  = Depends(Oauth2.get_current_user)):
+def deletingSimplePostFromDB(id: int,db:Session = Depends(get_db),user_data:dict  = Depends(Oauth2.get_current_user)):
     deleted_post = db.query(PostModelDB).filter(PostModelDB.id == id).first()
     if not deleted_post:
         raise HTTPException(
@@ -53,7 +54,7 @@ def deletingSimplePostFromDB(id: int,db:Session = Depends(get_db),user_credentia
         "rating": None,  # Optional field; you can also omit this field
     }
 @router.put("/UpdateDBposts/{id}", status_code=status.HTTP_200_OK,response_model=ApiResponsetoUser)
-def update_post(id: int, post: UpdatingPost,db:Session = Depends(get_db),user_credentials:dict  = Depends(Oauth2.get_current_user)):
+def update_post(id: int, post: UpdatingPost,db:Session = Depends(get_db),user_data:dict  = Depends(Oauth2.get_current_user)):
     # Check if the post exists in the database
     existing_post = db.query(PostModelDB).filter(PostModelDB.id == id).first()
     if not existing_post:
