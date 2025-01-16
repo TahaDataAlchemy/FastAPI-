@@ -6,6 +6,9 @@ from datetime import datetime, timedelta
 from .schema import TokenData
 from fastapi import Depends,status,HTTPException
 from fastapi.security import OAuth2PasswordBearer
+from app.ORM import get_db
+from sqlalchemy.orm import Session
+from app import models
 #this will help me to extract the token from Autherization Header Having Bearer Token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='login')
 #SECRET_KEY
@@ -38,13 +41,12 @@ def verify_acess_token(token:str,credentials_exception):
     
     return token_data
 
-#ye kare ga ye k token lega automatically verify kare ga verifyacesstoken se and usme se id pass nikale ga and keep me login rakhe ga 
-def get_current_user(token:str = Depends(oauth2_scheme)):#this extract the JWT from Authentication(Bearer) Header
+#ye kare ga ye k token lega automatically verify kare ga verifyacesstoken se and usme se id pass nikale ga and keep me login rakhe ga or DB ko access kare ga taqe data fetch kar sake
+def get_current_user(token:str = Depends(oauth2_scheme),db:Session = Depends(get_db)):#this extract the JWT from Authentication(Bearer) Header
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,detail=f"Could not validate credentials",headers = {"WWW-Authenticate":"Bearer"}
         )
     token_data = verify_acess_token(token,credentials_exception)
-    return {
-        "id":token_data.id,
-        "email":token_data.email
-    }
+    user = db.query(models.User).filter(models.User.id == token_data.id).first()
+    return {"id":user.id,"email":user.email}
+    
