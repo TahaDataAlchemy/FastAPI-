@@ -3,6 +3,8 @@ from app.routers import post, userRouters,auth  # Import routers
 from app.ORM import engine
 from app import models
 
+models.Base.metadata.create_all(bind=engine)
+
 # Initialize FastAPI app
 app = FastAPI()
 
