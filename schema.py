@@ -16,11 +16,6 @@ class CreatePost(PostBase):
 class UpdatingPost(PostBase):
     published:bool # In Updating Post we are telling User to set published explicitly not a default value,This is where why i need more than one schema validations
 
-class ApiResponsetoUser(BaseModel):
-    title:str
-    content:str
-    published:bool = True
-    rating: Optional[int] = None
 
 class UserValidation(BaseModel):
     email:EmailStr
@@ -30,6 +25,14 @@ class CreatedUserResponse(BaseModel):
     id: int
     email:EmailStr
     created_at: datetime
+
+class ApiResponsetoUser(BaseModel):
+    id:int
+    title:str
+    content:str
+    published:bool = True
+    rating: Optional[int] = None
+    owner:CreatedUserResponse
 
 class LoginValidation(BaseModel):
     email: EmailStr
