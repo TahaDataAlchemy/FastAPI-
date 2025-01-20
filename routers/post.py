@@ -4,6 +4,7 @@ from typing import List
 from ..ORM import engine,get_db
 from sqlalchemy.orm import Session
 from ..schema import UpdatingPost,CreatePost,ApiResponsetoUser
+from typing import Optional
 from app import Oauth2
 
 router = APIRouter(
@@ -12,12 +13,27 @@ router = APIRouter(
     
 )#Now Working both usecase with routers so we only initialize fastapi once and use it in entire project 
 
-#Note User_data in the funxtion Prameter contain id and email from login Table
 #Use to retrieve All Post present in Memory
 @router.get("/DBposts",status_code=status.HTTP_200_OK,response_model=List[ApiResponsetoUser])
-def get_Db_Post(db: Session = Depends(get_db),user_data:dict  = Depends(Oauth2.get_current_user)):
+def get_Db_Post(db: Session = Depends(get_db),user_data:dict  = Depends(Oauth2.get_current_user),limit:int = 10,skip: int = 0,search: Optional[str] = ""): #by default limit of the result (QuerryParameter) = 10 , after question mark in URL all are querry parameter
     # posts = db.query(PostModelDB).all()
-    posts = db.query(PostModelDB).filter(PostModelDB.ownner_id == user_data["id"]).all() #PostModelDb is taking ownner id from db(Post_Table) and User_data is taking id from users table and after matching them it send only those post which matched both ids
+    """ 
+        Note User_data in the funxtion Prameter contain id and email from login Table
+        limit, skip and search is the query parameter
+        PostModelDb is taking ownner id from db(Post_Table) and User_data is taking id from users table and after matching them it send only those post which matched both ids
+        search paremeter remains optional mean we dont need to provide the search content untill it is required
+        post/DBposts?limit=2&skip=1&search=BST%20Graphs = this querry parameter (%20 is used for space)
+    """
+
+    posts = (
+    db.query(PostModelDB)
+    .filter(PostModelDB.ownner_id == user_data["id"]) #filtering on the basis of owner id
+    .filter(PostModelDB.content.contains(search)) #filter on the basis of content
+    .limit(limit) #limiting on the basis of querry parameter
+    .offset(skip) #skipping on the basis of querry parameter
+    .all()
+)
+ # filter post on the basis of loggedin user and fetch the result(Post) based on limit 
     return posts
 
 @router.post("/creatingPost",status_code=status.HTTP_201_CREATED,response_model=ApiResponsetoUser)
