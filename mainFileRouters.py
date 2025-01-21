@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from app.routers import post, userRouters,auth  # Import routers
 from app.ORM import engine
 from app import models
+from .config import settings
 
 models.Base.metadata.create_all(bind=engine)
 
