@@ -1,8 +1,9 @@
 #Validating Our Model
-from pydantic import BaseModel,EmailStr
+from pydantic import BaseModel,EmailStr,Field
 from typing import Optional
 from datetime import datetime
 
+from pydantic.types import conint #use for specifying vote 0 AND 1 specifically , cons = it allowed negative number so handle it accordingly 
 class PostBase(BaseModel):
     title:str
     content:str
@@ -45,4 +46,7 @@ class TokenResponse(BaseModel):
 class TokenData(BaseModel):
     id: int
     email:EmailStr
-    
+
+class Vote(BaseModel):
+    post_id: int
+    dir: int = Field(..., le=1) 
