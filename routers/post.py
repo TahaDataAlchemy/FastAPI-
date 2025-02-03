@@ -1,11 +1,14 @@
 from fastapi import HTTPException,status,Depends,APIRouter
 from ..models import Post as PostModelDB
+from ..models import Vote as VoteTable
 from typing import List
 from ..ORM import engine,get_db
 from sqlalchemy.orm import Session
-from ..schema import UpdatingPost,CreatePost,ApiResponsetoUser
+from ..schema import UpdatingPost,CreatePost,ApiResponsetoUser,VoteResponse
 from typing import Optional
 from app import Oauth2
+from sqlalchemy.orm import aliased
+from sqlalchemy import func
 
 router = APIRouter(
     prefix="/post", # Use as a prefix like (/post/DBposts)
@@ -14,7 +17,7 @@ router = APIRouter(
 )#Now Working both usecase with routers so we only initialize fastapi once and use it in entire project 
 
 #Use to retrieve All Post present in Memory
-@router.get("/DBposts",status_code=status.HTTP_200_OK,response_model=List[ApiResponsetoUser])
+@router.get("/DBposts",status_code=status.HTTP_200_OK,response_model=List[VoteResponse])
 def get_Db_Post(db: Session = Depends(get_db),user_data:dict  = Depends(Oauth2.get_current_user),limit:int = 10,skip: int = 0,search: Optional[str] = ""): #by default limit of the result (QuerryParameter) = 10 , after question mark in URL all are querry parameter
     # posts = db.query(PostModelDB).all()
     """ 
@@ -32,9 +35,24 @@ def get_Db_Post(db: Session = Depends(get_db),user_data:dict  = Depends(Oauth2.g
     .limit(limit) #limiting on the basis of querry parameter
     .offset(skip) #skipping on the basis of querry parameter
     .all()
-)
- # filter post on the basis of loggedin user and fetch the result(Post) based on limit 
-    return posts
+    )
+    
+    result = (
+    db.query(
+        PostModelDB,
+        func.count(VoteTable.user_id).label("LikeCount"),
+    )
+    .outerjoin(VoteTable, PostModelDB.id == VoteTable.post_id)
+    .filter(PostModelDB.ownner_id == user_data["id"])  # ✅ Filter by logged-in user
+    .filter(PostModelDB.content.contains(search))  # ✅ Search filter
+    .group_by(PostModelDB.id, PostModelDB.ownner_id, PostModelDB.title, PostModelDB.content)  # ✅ Moved before limit/offset
+    .order_by(func.count(VoteTable.user_id).desc())  # ✅ Order by votes
+    .limit(limit)  # ✅ Limit
+    .offset(skip)  # ✅ Offset
+    .all()
+    )
+
+    return result
 
 @router.post("/creatingPost",status_code=status.HTTP_201_CREATED,response_model=ApiResponsetoUser)
 def PostCreated(post:CreatePost,db:Session = Depends(get_db),user_data:dict  = Depends(Oauth2.get_current_user)):
