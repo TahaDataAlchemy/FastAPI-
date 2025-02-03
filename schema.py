@@ -35,6 +35,10 @@ class ApiResponsetoUser(BaseModel):
     rating: Optional[int] = None
     owner:CreatedUserResponse
 
+class VoteResponse(BaseModel):
+    Post:ApiResponsetoUser
+    LikeCount: int
+
 class LoginValidation(BaseModel):
     email: EmailStr
     password:str
