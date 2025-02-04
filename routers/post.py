@@ -63,9 +63,22 @@ def PostCreated(post:CreatePost,db:Session = Depends(get_db),user_data:dict  = D
     db.refresh(new_post) #Refresh to get generated Fields
     return new_post
 
-@router.get("/DBposts/{id}",status_code=status.HTTP_200_OK,response_model=ApiResponsetoUser)
+@router.get("/DBposts/{id}",status_code=status.HTTP_200_OK,response_model=VoteResponse)
 def getSinglePost(id: int,db:Session = Depends(get_db),user_data:dict  = Depends(Oauth2.get_current_user)):
-    post = db.query(PostModelDB).filter(PostModelDB.id == id).first()
+    # post = db.query(PostModelDB).filter(PostModelDB.id == id).first()
+
+    post = (
+        db.query(
+            PostModelDB,
+            func.count(VoteTable.user_id).label("LikeCount"),
+        )
+        .outerjoin(VoteTable, PostModelDB.id == VoteTable.post_id)
+        .filter(PostModelDB.ownner_id == user_data["id"])  # ✅ Filter by logged-in user
+        .filter(PostModelDB.id == id)  # ✅ Ensure we fetch a specific post ID
+        .group_by(PostModelDB.id, PostModelDB.ownner_id, PostModelDB.title, PostModelDB.content)  # ✅ Group by necessary fields
+        .order_by(func.count(VoteTable.user_id).desc())  # ✅ Order by LikeCount
+        .first()
+    )
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with ID {id} is not Found"
