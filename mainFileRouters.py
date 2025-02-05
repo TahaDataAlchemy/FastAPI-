@@ -4,7 +4,7 @@ from app.ORM import engine
 from app import models
 from .config import settings
 
-models.Base.metadata.create_all(bind=engine)
+# models.Base.metadata.create_all(bind=engine) no need of it now as alemboc handle migrations and creations of DB
 
 # Initialize FastAPI app
 app = FastAPI()
