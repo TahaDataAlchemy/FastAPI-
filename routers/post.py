@@ -83,7 +83,9 @@ def getSinglePost(id: int,db:Session = Depends(get_db),user_data:dict  = Depends
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with ID {id} is not Found"
         )
-    if post.id!=user_data["id"]:
+    # Access `PostModelDB` object as `post[0]`
+    post_obj = post[0]
+    if post_obj.ownner_id!=user_data["id"]:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,detail = "Not Allowed to perfrom this operation"
         )
